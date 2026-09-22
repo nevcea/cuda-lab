@@ -1,0 +1,14 @@
+build/
+# build outputs (nvcc/MSVC)
+*.exe
+*.obj
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.o
+
+# profiler / debug output
+*.nsys-rep
+*.ncu-rep
+*.sqlite

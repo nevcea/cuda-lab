@@ -1,0 +1,6 @@
+{
+  "files.associations": { "*.cu": "cuda-cpp", "*.cuh": "cuda-cpp" },
+  "editor.formatOnSave": true,
+  "C_Cpp.clang_format_style": "file",
+  "C_Cpp.clang_format_fallbackStyle": "LLVM"
+}

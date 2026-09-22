@@ -21,6 +21,5 @@ Personal CUDA study repo (Windows, RTX 30-series `sm_86`, CUDA 13.4, MSVC 2022 B
 ## Working rules
 
 - Commit and push only when the user explicitly asks. Do not offer or suggest committing.
-- The user decides what to study or try next. Do not propose next steps or write to-do / "next" sections into docs; record only what was actually done or learned.
-- `TODO.md` holds only what the user has explicitly decided to do next (so context survives a cleared session), never items Claude proposes on its own.
+- The user decides what to study or try next. Don't propose next steps or add to-do / "next" content to docs unprompted — record only what was actually done or learned. Only write next-step content, including to `TODO.md`, when the user explicitly asks for it, and only what they decided, not Claude's own suggestions.
 - Commit messages follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, ...), imperative mood, no trailing period.

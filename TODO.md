@@ -1,3 +1,3 @@
 # TODO
 
-- SASS 분석: `sass/saxpy.sass`, `sass/saxpy_opt.sass`, `sass/matmul.sass`, `sass/matmul_shared.sass`, `sass/shared_mem.sass`
+- reduction 최적화 #3~#7 (Harris 슬라이드 순서, `reduction_sa.cu`=#2 다음 단계부터)

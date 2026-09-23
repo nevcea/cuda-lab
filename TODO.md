@@ -1,3 +1,3 @@
 # TODO
 
-- reduction 최적화 #3~#7 (Harris 슬라이드 순서, `reduction_sa.cu`=#2 다음 단계부터)
+- reduction 최적화 #5~#7 (Harris 슬라이드 순서, `reduction_uw.cu`=#4 다음 단계부터)

@@ -13,17 +13,19 @@
 
 #define BLOCK 256
 
-// interleaved addressing (Harris #1): tree-sum per block, then atomicAdd.
-// tid % (2*stride) scatters active threads, so warps diverge.
+// first add during load (Harris #3): each thread sums two inputs before the
+// tree, so half the blocks and no thread idles in the first step.
 __global__ void reduce(const float* in, float* out, int n) {
     __shared__ float s[BLOCK];
     int tid = threadIdx.x;
-    int i = blockIdx.x * blockDim.x + tid;
-    s[tid] = i < n ? in[i] : 0.f;
+    int i = blockIdx.x * blockDim.x * 2 + tid;
+    float v = i < n ? in[i] : 0.f;
+    if (i + blockDim.x < n) v += in[i + blockDim.x];
+    s[tid] = v;
     __syncthreads();
 
-    for (int stride = 1; stride < blockDim.x; stride *= 2) {
-        if (tid % (2 * stride) == 0) s[tid] += s[tid + stride];
+    for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
+        if (tid < stride) s[tid] += s[tid + stride];
         __syncthreads();
     }
 
@@ -39,7 +41,7 @@ int main() {
         h_in[i] = 1.f;
     *h_out = 0.f;
 
-    reduce<<<(n + BLOCK - 1) / BLOCK, BLOCK>>>(h_in, h_out, n);
+    reduce<<<(n + 2 * BLOCK - 1) / (2 * BLOCK), BLOCK>>>(h_in, h_out, n);
     CHECK(cudaGetLastError());
     CHECK(cudaDeviceSynchronize());
 

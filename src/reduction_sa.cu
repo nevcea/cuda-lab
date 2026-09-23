@@ -13,12 +13,8 @@
 
 #define BLOCK 256
 
-// sequential-addressing reduction (Harris "reduction #2"): same tree as
-// reduction_la.cu, but active threads are always the contiguous range
-// tid < stride instead of tid % (2*stride) == 0. Threads in a warp are
-// either all active or all inactive together, so no warp divergence --
-// only the cost is halved shared-mem parallelism per step (unavoidable
-// in any tree reduction).
+// sequential addressing (Harris #2): active threads are tid < stride, so
+// whole warps go idle together -- no divergence, unlike reduction_la.cu.
 __global__ void reduce(const float* in, float* out, int n) {
     __shared__ float s[BLOCK];
     int tid = threadIdx.x;

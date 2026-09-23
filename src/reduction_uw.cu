@@ -13,18 +13,32 @@
 
 #define BLOCK 256
 
-// interleaved addressing (Harris #1): tree-sum per block, then atomicAdd.
-// tid % (2*stride) scatters active threads, so warps diverge.
+// unroll last warp (Harris #4): once stride <= 32 only warp 0 works, so swap
+// __syncthreads() for __syncwarp(). needs blockDim.x >= 64.
 __global__ void reduce(const float* in, float* out, int n) {
     __shared__ float s[BLOCK];
     int tid = threadIdx.x;
-    int i = blockIdx.x * blockDim.x + tid;
-    s[tid] = i < n ? in[i] : 0.f;
+    int i = blockIdx.x * blockDim.x * 2 + tid;
+    float v = i < n ? in[i] : 0.f;
+    if (i + blockDim.x < n) v += in[i + blockDim.x];
+    s[tid] = v;
     __syncthreads();
 
-    for (int stride = 1; stride < blockDim.x; stride *= 2) {
-        if (tid % (2 * stride) == 0) s[tid] += s[tid + stride];
+    for (int stride = blockDim.x / 2; stride > 32; stride >>= 1) {
+        if (tid < stride) s[tid] += s[tid + stride];
         __syncthreads();
+    }
+
+    // Harris's volatile-only version races on Volta+ (independent thread
+    // scheduling): read, sync, then write each step.
+    if (tid < 32) {
+        v = s[tid];
+        for (int stride = 32; stride > 0; stride >>= 1) {
+            v += s[tid + stride];
+            __syncwarp();
+            s[tid] = v;
+            __syncwarp();
+        }
     }
 
     if (tid == 0) atomicAdd(out, s[0]);
@@ -39,7 +53,7 @@ int main() {
         h_in[i] = 1.f;
     *h_out = 0.f;
 
-    reduce<<<(n + BLOCK - 1) / BLOCK, BLOCK>>>(h_in, h_out, n);
+    reduce<<<(n + 2 * BLOCK - 1) / (2 * BLOCK), BLOCK>>>(h_in, h_out, n);
     CHECK(cudaGetLastError());
     CHECK(cudaDeviceSynchronize());
 

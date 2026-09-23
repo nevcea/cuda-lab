@@ -13,8 +13,29 @@
         }                                                                                                    \
     } while (0)
 
+// MOV R1, c[0x0][0x28]
 __global__ void saxpy(int n, float a, const float* x, float* y) {
+    /*
+    int i = blockIdx.x * blockDim.x + threadIdx.x:
+    S2R R4, SR_CTAID.X                     = blockIdx.x
+    S2R R3, SR_TID.X                       = threadIdx.x
+    IMAD R4, R4, c[0x0][0x0], R3           = R4 * blockDim.x(c[0x0][0x0]) + R3
+    */
     int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    /*
+    ISETP.GE.AND P0, PT, R4, c[0x0][0x160], PT ; if (i >= n)
+
+    y[i] = a * x[i] + y[i]:
+    MOV R5, 0x4                            = sizeof(float)
+    ULDC.64 UR4, c[0x0][0x118]             = memory access descriptor setup
+    IMAD.WIDE R2, R4, R5, c[0x0][0x168]    = &x[i]
+    IMAD.WIDE R4, R4, R5, c[0x0][0x170]    = &y[i]
+    LDG.E R2, [R2.64]                      = x[i]
+    LDG.E R7, [R4.64]                      = y[i]
+    FFMA R7, R2, c[0x0][0x164], R7         = a*x[i]+y[i]
+    STG.E [R4.64], R7                      = y[i] = result
+    */
     if (i < n) y[i] = a * x[i] + y[i];
 }
 

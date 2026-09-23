@@ -12,6 +12,15 @@
         }                                                                                                    \
     } while (0)
 
+// sass/matmul.sass structure (ptxas auto-unrolled, no shared memory):
+//   0x0000-0x0090  r, c index calc + bounds check (r<M && c<N), early exit
+//   0x00a0-0x0140  loop-count setup (K>=1? remainder%4?)
+//   0x0220-0x06b0  main loop, unrolled x16: LDG.E.CONSTANT from A and B directly
+//                  (each thread hits global memory every iteration, no reuse)
+//   0x06e0-0x0970  remainder loop, unrolled x8
+//   0x0990-0x0b20  remainder loop, unrolled x4
+//   0x0ba0-0x0c30  remainder loop, x1 (plain k++)
+//   0x0c40-0x0c70  C[r*N+c] = s
 __global__ void matmul(int M, int N, int K, const float* __restrict__ A, const float* __restrict__ B,
                        float* __restrict__ C) {
     int r = blockIdx.y * blockDim.y + threadIdx.y;

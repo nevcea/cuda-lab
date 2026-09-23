@@ -14,6 +14,18 @@
 
 #define TILE 16
 
+// sass/matmul_shared.sass structure (~140 instr, vs matmul.sass's 240+):
+//   0x0000-0x0090  r, c index calc + bounds check, early exit condition prepped
+//   0x00e0-0x0160  per-tile address/loop setup for this block
+//   0x01c0-0x0210  STS: each thread loads ONE A element + ONE B element into
+//                  shared mem (As/Bs assignment lines) -- global mem touched
+//                  once per tile, not once per k like the plain version
+//   0x0290         BAR.SYNC (__syncthreads() #1: wait for whole tile to land)
+//   0x02a0-0x04f0  inner k-loop (TILE=16), unrolled: all LDS (shared mem reads)
+//                  + FFMA, zero LDG here -- this is the payoff of tiling
+//   0x0500         BAR.SYNC (__syncthreads() #2: wait before next tile overwrite)
+//   0x0510         loop back to next tile (k0 += TILE) if any left
+//   0x0530-0x0560  C[r*N+c] = s
 __global__ void matmul_shared(int M, int N, int K, const float* __restrict__ A, const float* __restrict__ B,
                               float* __restrict__ C) {
     __shared__ float As[TILE][TILE];

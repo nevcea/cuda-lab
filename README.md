@@ -17,3 +17,8 @@ uv run build.py matmul
 ```
 
 `src/matmul.cu`를 `build/matmul.exe`로 빌드한 뒤 바로 실행합니다. VS Code에서는 `Ctrl+Shift+B`로 현재 파일을 빌드하고 실행합니다.
+
+## Reference
+
+- [Optimizing Parallel Reduction in CUDA (Mark Harris)](https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf)
+- [Online Normalizer Calculation for Softmax](https://arxiv.org/pdf/1804.06826)

@@ -21,4 +21,4 @@ uv run build.py matmul
 ## Reference
 
 - [Optimizing Parallel Reduction in CUDA (Mark Harris)](https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf)
-- [Online Normalizer Calculation for Softmax](https://arxiv.org/pdf/1804.06826)
+- [Dissecting the NVIDIA Volta GPU Architecture via Microbenchmarking](https://arxiv.org/pdf/1804.06826)

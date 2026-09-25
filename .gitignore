@@ -1,17 +1,7 @@
 build/
-# build outputs (nvcc/MSVC)
-*.exe
-*.obj
-*.lib
-*.exp
-*.pdb
-*.ilk
-*.o
 
-# profiler / debug output
-*.nsys-rep
+# profiler output written outside build/
 *.ncu-rep
-*.sqlite
 ncu_reports/
 
 # Python caches

@@ -1,4 +1,3 @@
-#include <cstdio>
 #include <cuda_runtime.h>
 #include <iostream>
 #include <cstdlib>
@@ -48,16 +47,6 @@ __global__ void matmul_shared(int M, int N, int K, const float* __restrict__ A, 
     if (r < M && c < N) C[r * N + c] = s;
 }
 
-template <typename T> inline void freeall(T*& ptr, bool is_gpu = false) {
-    if (ptr != nullptr) {
-        if (is_gpu)
-            cudaFree(ptr);
-        else
-            delete[] ptr;
-        ptr = nullptr;
-    }
-}
-
 int main() {
     const int m = 512;
     const int n = 512;
@@ -91,12 +80,12 @@ int main() {
     CHECK(cudaMemcpy(h_c, d_c, s_c, cudaMemcpyDeviceToHost));
     std::cout << "top-left ele c[0] : " << h_c[0] << " expected: " << k * 2.0f << "\n";
 
-    freeall(d_a, true);
-    freeall(d_b, true);
-    freeall(d_c, true);
-    freeall(h_a);
-    freeall(h_b);
-    freeall(h_c);
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_c);
+    delete[] h_a;
+    delete[] h_b;
+    delete[] h_c;
 
     return 0;
 }

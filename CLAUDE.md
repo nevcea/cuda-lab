@@ -7,7 +7,7 @@ Personal CUDA study repo (Windows, RTX 30-series `sm_86`, CUDA 13.4 via scoop, V
 ## Commands
 
 - Build + run one file: `uv run build.py <name>` (e.g. `uv run build.py matmul` compiles `src/matmul.cu` to `build/matmul.exe` and runs it). VS Code's default build task (Ctrl+Shift+B) does the same for the open file.
-- `build.py` runs `nvcc` in the same `cmd` session as MSVC's `vcvars64.bat` (nvcc needs the MSVC env), with `-arch=sm_86 -O2 -lcublas`. Toolchain paths are hardcoded at the top of the script.
+- `build.py` runs `nvcc` in the same `cmd` session as MSVC's `vcvars64.bat` (nvcc needs the MSVC env), with `-arch=sm_86 -O2`. Toolchain paths are hardcoded at the top of the script.
 - Profile: `uv run prof.py <name>` runs `build/<name>.exe` under Nsight Systems and prints GPU memcpy, kernel, and CUDA API time tables (build it first with `build.py`). `cudaMallocManaged` migrations don't show up as memcpy on Windows; use `cudaMemcpy` programs to see transfers.
 - Format/lint: `pre-commit run --all-files` (clang-format for `.cu`, markdownlint-cli2 for `.md`; config in `.pre-commit-config.yaml`, `.clang-format`, `.markdownlint-cli2.yaml` with MD013 line length disabled). The hooks run on commit and auto-fix files, so a first commit may fail; re-`git add` and commit again. On a fresh clone: `uv tool install pre-commit && pre-commit install`.
 

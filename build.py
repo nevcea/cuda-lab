@@ -1,5 +1,6 @@
 # usage: uv run build.py matmul         (src/matmul.cu -> build/matmul.exe, then runs it)
 #        uv run build.py matmul --sass  (also dumps SASS disassembly to sass/matmul.sass)
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -17,8 +18,8 @@ out.mkdir(exist_ok=True)
 exe = out / f"{name}.exe"
 
 # nvcc needs the MSVC env, so run it in the same cmd session as vcvars64
-build = f'call "{VCVARS}" >nul 2>&1 && "{NVCC}" -arch=sm_86 -O2 -Xcompiler /utf-8 -lcublas src/{name}.cu -o "{exe}"'
-if subprocess.run(build, shell=True, cwd=root, env={"VSLANG": "1033", **__import__("os").environ}).returncode:
+build = f'call "{VCVARS}" >nul 2>&1 && "{NVCC}" -arch=sm_86 -O2 -Xcompiler /utf-8 src/{name}.cu -o "{exe}"'
+if subprocess.run(build, shell=True, cwd=root, env={**os.environ, "VSLANG": "1033"}).returncode:
     sys.exit(1)
 
 if dump_sass:

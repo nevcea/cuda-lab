@@ -13,26 +13,37 @@
 
 #define BLOCK 256
 
-// unroll last warp (Harris #5): once stride <= 32 only warp 0 works, so swap
-// __syncthreads() for __syncwarp(). needs blockDim.x >= 64.
-__global__ void reduce(const float* in, float* out, int n) {
-    __shared__ float s[BLOCK];
+// complete unrolling (Harris #6): block size is a template parameter, so every
+// loop bound is a compile-time constant and nvcc unrolls both loops fully --
+// no stride compare/shift/branch left, only the adds and barriers. Harris
+// spells the steps out as `if (BS >= 512) ...` chains; a constant-bound loop
+// with #pragma unroll compiles to the same thing.
+//
+// sass/reduction_fu.sass vs sass/reduction_uw.sass:
+//   uw 0x0190-0x0230  loop body: SHF (stride>>=1), ISETP, @P1 BRA 0x190 back
+//   fu 0x0150-0x01e0  straight line: LDS [tid+0x200] / [tid+0x100] with
+//                     immediate offsets, one BAR.SYNC each, no back-branch
+//   the warp tail (stride 32..1) was already unrolled in uw: its bounds were
+//   constant even there, only blockDim.x / 2 was not.
+template <unsigned BS> __global__ void reduce(const float* in, float* out, int n) {
+    static_assert(BS >= 64 && (BS & (BS - 1)) == 0, "BS must be a power of 2 >= 64");
+    __shared__ float s[BS];
     int tid = threadIdx.x;
-    int i = blockIdx.x * blockDim.x * 2 + tid;
+    int i = blockIdx.x * BS * 2 + tid;
     float v = i < n ? in[i] : 0.f;
-    if (i + blockDim.x < n) v += in[i + blockDim.x];
+    if (i + BS < n) v += in[i + BS];
     s[tid] = v;
     __syncthreads();
 
-    for (int stride = blockDim.x / 2; stride > 32; stride >>= 1) {
+#pragma unroll
+    for (unsigned stride = BS / 2; stride > 32; stride >>= 1) {
         if (tid < stride) s[tid] += s[tid + stride];
         __syncthreads();
     }
 
-    // Harris's volatile-only version races on Volta+ (independent thread
-    // scheduling): read, sync, then write each step.
     if (tid < 32) {
         v = s[tid];
+#pragma unroll
         for (int stride = 32; stride > 0; stride >>= 1) {
             v += s[tid + stride];
             __syncwarp();
@@ -53,7 +64,9 @@ int main() {
         h_in[i] = 1.f;
     *h_out = 0.f;
 
-    reduce<<<(n + 2 * BLOCK - 1) / (2 * BLOCK), BLOCK>>>(h_in, h_out, n);
+    // BLOCK is fixed here; Harris dispatches a runtime block size with a
+    // switch over reduce<512>, reduce<256>, ... on the host.
+    reduce<BLOCK><<<(n + 2 * BLOCK - 1) / (2 * BLOCK), BLOCK>>>(h_in, h_out, n);
     CHECK(cudaGetLastError());
     CHECK(cudaDeviceSynchronize());
 

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdlib>
 #include <cuda_runtime.h>
 #include <iostream>
@@ -13,26 +14,31 @@
 
 #define BLOCK 256
 
-// unroll last warp (Harris #5): once stride <= 32 only warp 0 works, so swap
-// __syncthreads() for __syncwarp(). needs blockDim.x >= 64.
-__global__ void reduce(const float* in, float* out, int n) {
-    __shared__ float s[BLOCK];
+// multiple elements per thread (Harris #7): launch only as many blocks as fit
+// on the GPU at once and have each thread grid-stride over the input, summing
+// in a register. The shared-memory tree and atomicAdd then run once per
+// resident block instead of once per 512 inputs.
+template <unsigned BS> __global__ void reduce(const float* in, float* out, int n) {
+    static_assert(BS >= 64 && (BS & (BS - 1)) == 0, "BS must be a power of 2 >= 64");
+    __shared__ float s[BS];
     int tid = threadIdx.x;
-    int i = blockIdx.x * blockDim.x * 2 + tid;
-    float v = i < n ? in[i] : 0.f;
-    if (i + blockDim.x < n) v += in[i + blockDim.x];
+    float v = 0.f;
+    for (int i = blockIdx.x * BS * 2 + tid; i < n; i += BS * 2 * gridDim.x) {
+        v += in[i];
+        if (i + BS < n) v += in[i + BS];
+    }
     s[tid] = v;
     __syncthreads();
 
-    for (int stride = blockDim.x / 2; stride > 32; stride >>= 1) {
+#pragma unroll
+    for (unsigned stride = BS / 2; stride > 32; stride >>= 1) {
         if (tid < stride) s[tid] += s[tid + stride];
         __syncthreads();
     }
 
-    // Harris's volatile-only version races on Volta+ (independent thread
-    // scheduling): read, sync, then write each step.
     if (tid < 32) {
         v = s[tid];
+#pragma unroll
         for (int stride = 32; stride > 0; stride >>= 1) {
             v += s[tid + stride];
             __syncwarp();
@@ -53,7 +59,15 @@ int main() {
         h_in[i] = 1.f;
     *h_out = 0.f;
 
-    reduce<<<(n + 2 * BLOCK - 1) / (2 * BLOCK), BLOCK>>>(h_in, h_out, n);
+    // one full wave: SMs * resident blocks per SM, capped by what n needs
+    int sms, per_sm;
+    CHECK(cudaDeviceGetAttribute(&sms, cudaDevAttrMultiProcessorCount, 0));
+    CHECK(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&per_sm, reduce<BLOCK>, BLOCK, 0));
+    int blocks = std::min(sms * per_sm, (n + 2 * BLOCK - 1) / (2 * BLOCK));
+    std::cout << sms << " SMs x " << per_sm << " blocks/SM -> " << blocks << " blocks, "
+              << (n + blocks * BLOCK - 1) / (blocks * BLOCK) << " elements/thread\n";
+
+    reduce<BLOCK><<<blocks, BLOCK>>>(h_in, h_out, n);
     CHECK(cudaGetLastError());
     CHECK(cudaDeviceSynchronize());
 

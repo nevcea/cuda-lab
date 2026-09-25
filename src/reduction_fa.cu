@@ -13,7 +13,7 @@
 
 #define BLOCK 256
 
-// first add during load (Harris #3): each thread sums two inputs before the
+// first add during load (Harris #4): each thread sums two inputs before the
 // tree, so half the blocks and no thread idles in the first step.
 __global__ void reduce(const float* in, float* out, int n) {
     __shared__ float s[BLOCK];

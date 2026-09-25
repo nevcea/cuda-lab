@@ -13,8 +13,10 @@
 
 #define BLOCK 256
 
-// sequential addressing (Harris #2): active threads are tid < stride, so
+// sequential addressing (Harris #3): active threads are tid < stride, so
 // whole warps go idle together -- no divergence, unlike reduction_la.cu.
+// A warp reads 32 consecutive floats, one per bank, so none of
+// reduction_si.cu's bank conflicts either.
 __global__ void reduce(const float* in, float* out, int n) {
     __shared__ float s[BLOCK];
     int tid = threadIdx.x;

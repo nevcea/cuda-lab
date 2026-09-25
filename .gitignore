@@ -12,3 +12,10 @@ build/
 *.nsys-rep
 *.ncu-rep
 *.sqlite
+ncu_reports/
+
+# Python caches
+__pycache__/
+
+# Claude Code per-machine settings (shared .claude/settings.json stays tracked)
+.claude/settings.local.json

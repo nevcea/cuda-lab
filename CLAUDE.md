@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Personal CUDA study repo (Windows, RTX 30-series `sm_86`, CUDA 13.4, MSVC 2022 Build Tools). Each `.cu` file in `src/` is a standalone, single-file program with its own `main()`; there is no shared library, test suite, or CMake.
+Personal CUDA study repo (Windows, RTX 30-series `sm_86`, CUDA 13.4 via scoop, Visual Studio Build Tools 18). Each `.cu` file in `src/` is a standalone, single-file program with its own `main()`; there is no shared library, test suite, or CMake.
 
 ## Commands
 

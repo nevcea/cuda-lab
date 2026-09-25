@@ -4,8 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-VCVARS = r"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
-CUDA_BIN = r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.4\bin"
+VCVARS = r"C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+CUDA_BIN = r"C:\Users\user\scoop\apps\cuda\current\bin"
 NVCC = rf"{CUDA_BIN}\nvcc.exe"
 CUOBJDUMP = rf"{CUDA_BIN}\cuobjdump.exe"
 

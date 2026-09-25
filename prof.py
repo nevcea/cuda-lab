@@ -3,7 +3,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-NSYS = r"C:\Program Files\NVIDIA Corporation\Nsight Systems 2026.3.2\target-windows-x64\nsys.exe"
+# newest installed Nsight Systems, so a version upgrade doesn't break the path
+found = sorted(Path(r"C:\Program Files\NVIDIA Corporation").glob("Nsight Systems */target-windows-x64/nsys.exe"))
+if not found:
+    sys.exit("nsys.exe not found under C:\\Program Files\\NVIDIA Corporation; install Nsight Systems")
+NSYS = found[-1]
 
 name = sys.argv[1].removesuffix(".cu")
 out = Path(__file__).parent / "build"

@@ -5,7 +5,7 @@ CUDA 공부용 저장소입니다. `src/`의 각 `.cu` 파일은 독립 실행�
 ## 환경
 
 - Windows, NVIDIA GPU (`sm_86`, RTX 30 시리즈)
-- CUDA Toolkit 13.4, Visual Studio 2022 Build Tools
+- CUDA Toolkit 13.4 (scoop), Visual Studio Build Tools 18
 - [uv](https://docs.astral.sh/uv/)
 
 GPU 아키텍처나 설치 경로가 다르면 `build.py` 상단의 경로와 `-arch` 값을 수정하세요.
